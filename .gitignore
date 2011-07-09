@@ -1,3 +1,4 @@
+# Editor temporaties
 .swp
 .swo
 .*.swp
@@ -5,5 +6,6 @@
 
 *.pyc
 
+# Data files; someone else's copyright
 clf
 conll02/

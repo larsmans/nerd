@@ -1,12 +1,11 @@
 from features import extract_features
-from train import train
 from util import int_bio
 
 
-def predict(clf, sentence):
+def predict(clf, sentence, vocabulary):
     """Predict BIO labels for a single sentence."""
 
-    X = extract_features(sentence)
+    X = extract_features(sentence, vocabulary)
     pred = [int_bio[y] for y in clf.predict(X)]
 
     # Heuristic repair: make output consistent,
@@ -27,10 +26,10 @@ if __name__ == "__main__":
         print >> sys.stderr, "Usage: %s clf input_file" % sys.argv[0]
         sys.exit(1)
 
-    clf = pickle.load(open(sys.argv[1]))
+    clf, vocabulary = pickle.load(open(sys.argv[1]))
 
     for sentence in read_file(sys.argv[2]):
-        Y_pred = predict(clf, sentence)
+        Y_pred = predict(clf, sentence, vocabulary)
         for (token, pos, y_true), y_pred in zip(sentence, Y_pred):
             print token, pos, y_true[0], y_pred
         print

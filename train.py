@@ -1,10 +1,11 @@
+import logging
 import numpy as np
 from scikits.learn.grid_search import GridSearchCV
-from scikits.learn.svm import LinearSVC
-import logging
+from scikits.learn.svm.sparse import LinearSVC
+import scipy.sparse as sp
 
 import conll
-from features import extract_features, n_features
+from features import extract_features
 from util import bio_int
 
 
@@ -23,12 +24,13 @@ def train(sentences):
         sentences = list(sentences)
 
     logger.debug("Extracting features")
-    #X = np.empty((sum(len(s) for s in sentences), n_features), dtype=bool)
+
+    vocabulary = dict((t[0], i) for s in sentences for i, t in enumerate(s))
+
     X = []
     for i, s in enumerate(sentences):
-        #X[i] = extract_features(s)
-        X.append(extract_features(s))
-    X = np.concatenate(X)
+        X.append(extract_features(s, vocabulary))
+    X = sp.vstack(X, format='csr')
 
     # FIXME Only BIO tags for now
     y = np.array([bio_int[tok[2][0]] for s in sentences for tok in s])
@@ -41,7 +43,7 @@ def train(sentences):
     logger.debug("Training linear SVMs")
     clf = GridSearchCV(LinearSVC(), params, n_jobs=-1).fit(X, y)
     logger.debug("Done, returning the best one")
-    return clf.best_estimator
+    return (clf.best_estimator, vocabulary)
 
 
 if __name__ == "__main__":

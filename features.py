@@ -1,19 +1,33 @@
-import numpy as np
+#import numpy as np
 import re
+import scipy.sparse as sp
 
 
-def extract_features(sentence):
+def extract_features(sentence, vocabulary):
     """Do feature extraction on a single sentence.
 
     We need a sentence, rather than a token, since some features depend
     on the context of tokens.
+
+    Parameters
+    ----------
+    sentence : list of string
+
+    vocabulary : dict of (string * int)
+        Maps terms to indices.
     """
     n_tokens = len(sentence)
-    X = np.empty((n_tokens, n_features), dtype=bool)
+    n_features = n_feature_functions + len(vocabulary)
+    #X = np.empty((n_tokens, n_features), dtype=bool)
+    X = sp.lil_matrix((n_tokens, n_features), dtype=bool)
 
     for i in xrange(n_tokens):
-        for j, f in enumerate(FEATURES):
+        for j, f in enumerate(FEATURE_FUNCTIONS):
             X[i, j] = f(sentence, i)
+        try:
+            X[i, n_feature_functions + vocabulary[sentence[i][0]]] = 1
+        except KeyError:    # OOV
+            pass
 
     return X
 
@@ -98,13 +112,13 @@ def prevf(f, offset=1):
     return feature
 
 
-FEATURES = [initial_cap, all_caps, first_of_sentence, has_dash,
-            #has_num,
-            #butnot(initial_cap, first_of_sentence),
-            prevf(initial_cap), prevf(all_caps),
-            isadj, isadv, isart, isconj, isint, ismisc,
-            isnoun, isnum, isprep, ispunc, ispron, isverb]
-n_features = len(FEATURES)
+FEATURE_FUNCTIONS = [initial_cap, all_caps, first_of_sentence, has_dash,
+                     #has_num,
+                     #butnot(initial_cap, first_of_sentence),
+                     prevf(initial_cap), prevf(all_caps),
+                     isadj, isadv, isart, isconj, isint, ismisc,
+                     isnoun, isnum, isprep, ispunc, ispron, isverb]
+n_feature_functions = len(FEATURE_FUNCTIONS)
 
 
 if __name__ == '__main__':
