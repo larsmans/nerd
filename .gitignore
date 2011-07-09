@@ -1,0 +1,9 @@
+.swp
+.swo
+.*.swp
+.*.swo
+
+*.pyc
+
+clf
+conll02/
