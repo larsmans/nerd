@@ -1,4 +1,3 @@
-#import numpy as np
 import re
 import scipy.sparse as sp
 
@@ -18,15 +17,16 @@ def extract_features(sentence, vocabulary):
     """
     n_tokens = len(sentence)
     n_features = n_feature_functions + len(vocabulary)
-    #X = np.empty((n_tokens, n_features), dtype=bool)
     X = sp.lil_matrix((n_tokens, n_features), dtype=bool)
 
     for i in xrange(n_tokens):
         for j, f in enumerate(FEATURE_FUNCTIONS):
             X[i, j] = f(sentence, i)
+
+        # Vocabulary feature
         try:
-            X[i, n_feature_functions + vocabulary[sentence[i][0]]] = 1
-        except KeyError:    # OOV
+            X[i, n_feature_functions + vocabulary[sentence[i][0].lower()]] = 1
+        except KeyError:
             pass
 
     return X
