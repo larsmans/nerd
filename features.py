@@ -1,8 +1,9 @@
+import numpy as np
 import re
 import scipy.sparse as sp
 
 
-def extract_features(sentence, vocabulary):
+def extract_features(sentence, vocabulary, onehot):
     """Do feature extraction on a single sentence.
 
     We need a sentence, rather than a token, since some features depend
@@ -16,20 +17,32 @@ def extract_features(sentence, vocabulary):
         Maps terms to indices.
     """
     n_tokens = len(sentence)
-    n_features = n_feature_functions + len(vocabulary)
-    X = sp.lil_matrix((n_tokens, n_features), dtype=bool)
+
+    X_ff = sp.lil_matrix((n_tokens, n_feature_functions), dtype=bool)
+    X_curword = np.zeros((n_tokens, 1), dtype=int)
+    X_prevword = np.zeros((n_tokens, 1), dtype=int)
+    X_nextword = np.zeros((n_tokens, 1), dtype=int)
 
     for i in xrange(n_tokens):
         for j, f in enumerate(FEATURE_FUNCTIONS):
-            X[i, j] = f(sentence, i)
+            X_ff[i, j] = f(sentence, i)
 
-        # Vocabulary feature
+        # Word window
         try:
-            X[i, n_feature_functions + vocabulary[sentence[i][0].lower()]] = 1
+            X_curword[i, 0] = vocabulary[sentence[i][0].lower()] + 1
         except KeyError:
             pass
+        try:
+            X_prevword[i, 0] = vocabulary[sentence[i - 1][0].lower()] + 1
+        except (IndexError, KeyError):
+            pass
+        try:
+            X_nextword[i, 0] = vocabulary[sentence[i + 1][0].lower()] + 1
+        except (IndexError, KeyError):
+            pass
 
-    return X
+    return sp.hstack([X_ff] + [onehot.transform(X)
+                               for X in [X_curword, X_prevword, X_nextword]])
 
 
 # Spelling

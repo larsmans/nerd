@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from scikits.learn.grid_search import GridSearchCV
+from scikits.learn.preprocessing import OneHotTransformer
 from scikits.learn.svm.sparse import LinearSVC
 import scipy.sparse as sp
 
@@ -26,10 +27,11 @@ def train(sentences):
     logger.debug("Extracting features")
 
     vocabulary = dict((t[0], i) for s in sentences for i, t in enumerate(s))
+    onehot = OneHotTransformer().fit(np.atleast_2d(vocabulary.values()).T)
 
     X = []
     for i, s in enumerate(sentences):
-        X.append(extract_features(s, vocabulary))
+        X.append(extract_features(s, vocabulary, onehot))
     X = sp.vstack(X, format='csr')
 
     # FIXME Only BIO tags for now
@@ -37,13 +39,12 @@ def train(sentences):
 
     params = {
         "loss": ["l1", "l2"],
-        "multi_class": [True, False],
         "C": [1., 10., 100.],
     }
     logger.debug("Training linear SVMs")
     clf = GridSearchCV(LinearSVC(), params, n_jobs=-1).fit(X, y)
     logger.debug("Done, returning the best one")
-    return (clf.best_estimator, vocabulary)
+    return (clf.best_estimator, vocabulary, onehot)
 
 
 if __name__ == "__main__":
@@ -51,6 +52,10 @@ if __name__ == "__main__":
 
     import cPickle as pickle
     import sys
+
+    if len(sys.argv) != 2:
+        print >> sys.stderr, "usage: %s input_file" % sys.argv[0]
+        sys.exit(1)
 
     logging.basicConfig(level=logging.DEBUG)
     pickle.dump(train(conll.read_file(sys.argv[1])), sys.stdout)
