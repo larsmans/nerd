@@ -19,9 +19,10 @@ def extract_features(sentence, vocabulary, onehot):
     n_tokens = len(sentence)
 
     X_ff = sp.lil_matrix((n_tokens, n_feature_functions), dtype=bool)
-    X_curword = np.zeros((n_tokens, 1), dtype=int)
-    X_prevword = np.zeros((n_tokens, 1), dtype=int)
-    X_nextword = np.zeros((n_tokens, 1), dtype=int)
+    X_wordwindow = np.zeros((n_tokens, 3), dtype=int)
+    X_curword = X_wordwindow[:, 0]
+    X_prevword = X_wordwindow[:, 1]
+    X_nextword = X_wordwindow[:, 2]
 
     for i in xrange(n_tokens):
         for j, f in enumerate(FEATURE_FUNCTIONS):
@@ -29,20 +30,19 @@ def extract_features(sentence, vocabulary, onehot):
 
         # Word window
         try:
-            X_curword[i, 0] = vocabulary[sentence[i][0].lower()] + 1
+            X_curword[i] = vocabulary[sentence[i][0].lower()] + 1
         except KeyError:
             pass
         try:
-            X_prevword[i, 0] = vocabulary[sentence[i - 1][0].lower()] + 1
+            X_prevword[i] = vocabulary[sentence[i - 1][0].lower()] + 1
         except (IndexError, KeyError):
             pass
         try:
-            X_nextword[i, 0] = vocabulary[sentence[i + 1][0].lower()] + 1
+            X_nextword[i] = vocabulary[sentence[i + 1][0].lower()] + 1
         except (IndexError, KeyError):
             pass
 
-    return sp.hstack([X_ff] + [onehot.transform(X)
-                               for X in [X_curword, X_prevword, X_nextword]])
+    return sp.hstack([X_ff] + [onehot.transform(X_wordwindow)])
 
 
 # Spelling

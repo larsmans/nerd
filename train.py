@@ -1,3 +1,4 @@
+from joblib import Parallel, delayed
 import logging
 import numpy as np
 from scikits.learn.grid_search import GridSearchCV
@@ -29,10 +30,11 @@ def train(sentences):
     vocabulary = dict((t[0], i) for s in sentences for i, t in enumerate(s))
     onehot = OneHotTransformer().fit(np.atleast_2d(vocabulary.values()).T)
 
-    X = []
-    for i, s in enumerate(sentences):
-        X.append(extract_features(s, vocabulary, onehot))
+    #X = [extract_features(s, vocabulary, onehot) for s in sentences]
+    X = Parallel(n_jobs=4)(delayed(extract_features)(s, vocabulary, onehot) for s in sentences)
     X = sp.vstack(X, format='csr')
+    import sys
+    sys.exit()
 
     # FIXME Only BIO tags for now
     y = np.array([bio_int[tok[2][0]] for s in sentences for tok in s])
